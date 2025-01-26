@@ -45,11 +45,15 @@
   try {
     let pipelineText = 'Loading...';
     let gicsSector = 'Loading...';
+    
+    document.getElementById('pipelineText').textContent = 'Fetching...';
+    document.getElementById('gicsSector').textContent = 'Fetching...';
+    document.getElementById('gicsSubIndustry').textContent = 'Fetching...';
+
     const res = await fetch(`/api/pipeline/${ticker}`);
     if (!res.ok) throw new Error(`Error: ${res.status}`);
     const data = await res.json();
 
-    // Extract text and GICS Sector
     const outputText = data.text;
     const outputData = data.data;
 
@@ -67,7 +71,6 @@
     console.log('Pipeline Text:', pipelineText);
     console.log('GICS Sector:', gicsSector);
 
-    // Update the DOM with the new values
     document.getElementById('pipelineText').textContent = pipelineText;
     document.getElementById('gicsSector').textContent = gicsSector;
     document.getElementById('gicsSubIndustry').textContent = gicsSubIndustry;
@@ -122,7 +125,7 @@
     });
 
     const mean = 0;
-    const stdDev = 0.005;
+    const stdDev = 0.01;
     const gaussianRandom = () =>
       mean + stdDev * Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
 
@@ -156,7 +159,7 @@
         pointHoverRadius: 5,
       },
     ];
-
+    updateScores();
     chartInstance.options.plugins.title.text = `Stock Prices for ${ticker}`;
     chartInstance.update(); 
 
@@ -235,7 +238,6 @@ function renderErrorChart(ticker) {
   });
 }
    async function handleSymbolChange() {
-      updateScores();
       await fetchPipelineText(selectedSymbol);
       await createChart(selectedSymbol);
     }
@@ -257,7 +259,6 @@ function renderErrorChart(ticker) {
       symbols = Object.keys(esgMap);
       if (symbols.length > 0) {
         selectedSymbol = symbols[0];
-        updateScores();
         await fetchPipelineText(selectedSymbol);
         await createChart(selectedSymbol);
       }
