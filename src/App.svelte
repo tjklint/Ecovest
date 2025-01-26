@@ -4,7 +4,6 @@
 
   let message = "Loading...";
   
-  // Example: fetch data from Flask’s /api/hello
   async function getMessage() {
     const res = await fetch("/api/hello");
     const data = await res.json();

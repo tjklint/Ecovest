@@ -1,10 +1,24 @@
-import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import path from 'path';
 
-// https://vite.dev/config/
+
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [
+    svelte({
+      compilerOptions: {
+        compatibility: {
+          componentApi: 4
+        }
+      }
+    })  ],
   build: {
-    outDir: 'dist', 
+    outDir: 'dist',
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        analytics: path.resolve(__dirname, 'analytics.html')
+      }
+    }
   }
-})
+});
