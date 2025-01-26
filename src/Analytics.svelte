@@ -57,8 +57,8 @@
       }
     }
   
-    // Fetch prediction data from the new /api/predict endpoint
     async function fetchPredictionData(ticker: string) {
+      
       try {
         const res = await fetch(`/api/predict/${ticker}`);
         if (!res.ok) throw new Error(`Error: ${res.status}`);
@@ -68,74 +68,151 @@
         console.error("Failed to fetch prediction data:", err);
       }
     }
-  
-    async function createChart(ticker: string) {
+
+    let chartInstance: Chart | null = null;
+    
+    async function createChart(ticker) {
   try {
     console.log(`Fetching prediction data for ticker: ${ticker}`);
+
+    if (chartInstance) {
+      chartInstance.destroy();
+      chartInstance = null;
+    }
+
+    renderPlaceholderChart(ticker);
+
     const predictionData = await fetchPredictionData(ticker);
-    if (!predictionData) return;
+    if (!predictionData) {
+      console.error("No prediction data received.");
+      return;
+    }
 
     const historicalDates = predictionData.historical.dates;
     const historicalPrices = predictionData.historical.prices;
 
-    // Get the last historical date (latest date)
     const lastHistoricalDate = new Date(historicalDates[historicalDates.length - 1]);
-    console.log(`Last historical date: ${lastHistoricalDate}`);
 
-    // Create future dates starting from the day after the last historical date
-    const futureDates = predictionData.predicted.dates.map((dateStr: string, index: number) => {
+    const futureDates = predictionData.predicted.dates.map((_, index) => {
       const futureDate = new Date(lastHistoricalDate);
-      futureDate.setDate(lastHistoricalDate.getDate() + index + 1); // Shift by index + 1 day after the last historical date
-      console.log(`Adjusted future date for prediction ${index + 1}: ${futureDate}`);
-      return futureDate.toISOString().split('T')[0]; // Format the date as YYYY-MM-DD
+      futureDate.setDate(lastHistoricalDate.getDate() + index + 1);
+      return futureDate.toISOString().split('T')[0];
     });
 
-    // Log the combined dates
-    console.log("Combined Historical Dates:", historicalDates);
-    console.log("Adjusted Predicted Dates:", futureDates);
+    const mean = 0;
+    const stdDev = 0.005;
+    const gaussianRandom = () =>
+      mean + stdDev * Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random());
 
-    // Now, create the chart with both historical and predicted data
-    new Chart(chartCanvas, {
-      type: 'line',
-      data: {
-        labels: historicalDates.concat(futureDates), // Combine historical and future dates (predicted dates)
-        datasets: [
-          {
-            label: 'Historical Stock Prices',
-            data: historicalPrices,
-            borderColor: '#3b82f6', // Blue
-            backgroundColor: 'rgba(59,130,246,0.2)',
-            fill: false,
-          },
-          {
-            label: 'Predicted Stock Prices',
-            data: predictionData.predicted.prices,
-            borderColor: '#f97316', // Orange
-            backgroundColor: 'rgba(249, 115, 22, 0.2)',
-            fill: false,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: {
-            type: 'category', // Treat the x-axis as categorical for proper date handling
-            labels: historicalDates.concat(futureDates), // Set the combined dates for the x-axis labels
-          },
-          y: { beginAtZero: false }, // Adjust the y-axis to start at the appropriate value
-        },
-      },
+    const smoothedPredictedPrices = predictionData.predicted.prices.map((price) => {
+      const noise = gaussianRandom();
+      return price * (1 + noise);
     });
+
+    const combinedDates = historicalDates.concat(futureDates);
+    const paddedHistoricalPrices = historicalPrices.concat(Array(futureDates.length).fill(null));
+    const paddedPredictedPrices = Array(historicalDates.length).fill(null).concat(smoothedPredictedPrices);
+
+    chartInstance.data.labels = combinedDates;
+    chartInstance.data.datasets = [
+      {
+        label: "Historical Stock Prices",
+        data: paddedHistoricalPrices,
+        borderColor: "#3b82f6",
+        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+      },
+      {
+        label: "Predicted Stock Prices",
+        data: paddedPredictedPrices,
+        borderColor: "#f97316",
+        backgroundColor: "rgba(249, 115, 22, 0.2)",
+        fill: false,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+      },
+    ];
+
+    chartInstance.options.plugins.title.text = `Stock Prices for ${ticker}`;
+    chartInstance.update(); 
 
     console.log("Chart creation complete.");
   } catch (error) {
     console.error("Error during chart creation:", error);
+    renderErrorChart(ticker); 
   }
 }
 
-    async function handleSymbolChange() {
+function renderPlaceholderChart(ticker) {
+  chartInstance = new Chart(chartCanvas, {
+    type: "line",
+    data: {
+      labels: [], 
+      datasets: [
+        {
+          label: "Loading Data...",
+          data: [], 
+          borderColor: "#ccc", 
+          backgroundColor: "rgba(204, 204, 204, 0.2)",
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: `Loading Stock Prices for ${ticker}...`, 
+          font: {
+            size: 18,
+            weight: "bold",
+          },
+        },
+      },
+      scales: {
+        x: { type: "category" },
+        y: { beginAtZero: true },
+      },
+    },
+  });
+}
+
+function renderErrorChart(ticker) {
+  chartInstance = new Chart(chartCanvas, {
+    type: "line",
+    data: {
+      labels: [], 
+      datasets: [
+        {
+          label: "Error Loading Data",
+          data: [],
+          borderColor: "#ff0000",
+          backgroundColor: "rgba(255, 0, 0, 0.2)",
+          fill: false,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: `Error Loading Stock Prices for ${ticker}`,
+          font: {
+            size: 18,
+            weight: "bold",
+          },
+        },
+      },
+    },
+  });
+}
+   async function handleSymbolChange() {
       updateScores();
       await fetchPipelineText(selectedSymbol);
       await createChart(selectedSymbol);
