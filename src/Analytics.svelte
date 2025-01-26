@@ -1,69 +1,93 @@
 <script lang="ts">
-    import { onMount } from 'svelte'
-    import Chart from 'chart.js/auto'
-    
-    let symbols: string[] = []
-    let selectedSymbol = ''
-    let environmentScore = 0
-    let socialScore = 0
-    let governanceScore = 0
-    let totalEsg = 0
-    let esgMap: Record<string, { environmentScore: number; socialScore: number; governanceScore: number; totalEsg: number }> = {}
-    let bars: { label: string; score: number }[] = []
-    
-    let chartCanvas: HTMLCanvasElement
-    
+    import { onMount } from 'svelte';
+    import Chart from 'chart.js/auto';
+  
+    let symbols: string[] = [];
+    let selectedSymbol = '';
+    let environmentScore = 0;
+    let socialScore = 0;
+    let governanceScore = 0;
+    let totalEsg = 0;
+    let esgMap: Record<string, { environmentScore: number; socialScore: number; governanceScore: number; totalEsg: number }> = {};
+    let bars: { label: string; score: number }[] = [];
+    let pipelineText = '';
+    let chartCanvas: HTMLCanvasElement;
+  
     function getBarColor(score: number) {
-      if (score <= 10) return '#22c55e'
-      if (score <= 20) return '#eab308'
-      return '#ef4444'
+      if (score <= 10) return '#22c55e';
+      if (score <= 20) return '#eab308';
+      return '#ef4444';
     }
+  
     function getBarWidth(score: number) {
-      const max = 30
-      const pct = (score / max) * 100
-      return Math.min(pct, 100)
+      const max = 30;
+      const pct = (score / max) * 100;
+      return Math.min(pct, 100);
     }
+  
     function updateScores() {
       if (esgMap[selectedSymbol]) {
-        environmentScore = esgMap[selectedSymbol].environmentScore
-        socialScore = esgMap[selectedSymbol].socialScore
-        governanceScore = esgMap[selectedSymbol].governanceScore
-        totalEsg = esgMap[selectedSymbol].totalEsg
+        environmentScore = esgMap[selectedSymbol].environmentScore;
+        socialScore = esgMap[selectedSymbol].socialScore;
+        governanceScore = esgMap[selectedSymbol].governanceScore;
+        totalEsg = esgMap[selectedSymbol].totalEsg;
       } else {
-        environmentScore = 0
-        socialScore = 0
-        governanceScore = 0
-        totalEsg = 0
+        environmentScore = 0;
+        socialScore = 0;
+        governanceScore = 0;
+        totalEsg = 0;
       }
     }
-    function handleSymbolChange() {
-      updateScores()
+  
+    async function fetchPipelineText(ticker: string) {
+      try {
+        pipelineText = 'Loading...'; 
+        const res = await fetch(`/api/pipeline/${ticker}`);
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        const data = await res.json();
+        const output = data.output;
+        if (output) {
+          pipelineText = output;
+        } else {
+          pipelineText = 'No output available.';
+        }
+      } catch (err) {
+        pipelineText = 'Failed to fetch pipeline data.';
+        console.error(err);
+      }
     }
+  
+    async function handleSymbolChange() {
+      updateScores();
+      await fetchPipelineText(selectedSymbol);
+    }
+  
     onMount(async () => {
-      const res = await fetch('/data/sp500_esg_data.csv')
-      const csv = await res.text()
-      const lines = csv.trim().split('\n')
-      const dataLines = lines.slice(1)
-      dataLines.forEach(line => {
-        const cols = line.split(',')
-        const symbol = cols[0]
-        const e = parseFloat(cols[4]) || 0
-        const s = parseFloat(cols[5]) || 0
-        const g = parseFloat(cols[6]) || 0
-        const t = parseFloat(cols[7]) || 0
-        esgMap[symbol] = { environmentScore: e, socialScore: s, governanceScore: g, totalEsg: t }
-      })
-      symbols = Object.keys(esgMap)
+      const res = await fetch('http://localhost:5173/data/sp500_esg_data.csv');
+      const csv = await res.text();
+      const lines = csv.trim().split('\n');
+      const dataLines = lines.slice(1);
+      dataLines.forEach((line) => {
+        const cols = line.split(',');
+        const symbol = cols[0];
+        const e = parseFloat(cols[4]) || 0;
+        const s = parseFloat(cols[5]) || 0;
+        const g = parseFloat(cols[6]) || 0;
+        const t = parseFloat(cols[7]) || 0;
+        esgMap[symbol] = { environmentScore: e, socialScore: s, governanceScore: g, totalEsg: t };
+      });
+      symbols = Object.keys(esgMap);
       if (symbols.length > 0) {
-        selectedSymbol = symbols[0]
-        updateScores()
+        selectedSymbol = symbols[0];
+        updateScores();
+        await fetchPipelineText(selectedSymbol);
       }
       bars = [
         { label: 'Environment', score: environmentScore },
         { label: 'Social', score: socialScore },
         { label: 'Governance', score: governanceScore },
-        { label: 'Total ESG', score: totalEsg }
-      ]
+        { label: 'Total ESG', score: totalEsg },
+      ];
       new Chart(chartCanvas, {
         type: 'line',
         data: {
@@ -73,74 +97,75 @@
               label: 'Predicted Stock Price',
               data: [150, 160, 158, 165, 170],
               borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59,130,246,0.2)'
-            }
-          ]
+              backgroundColor: 'rgba(59,130,246,0.2)',
+            },
+          ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           scales: {
-            y: { beginAtZero: false }
-          }
-        }
-      })
-    })
-    
+            y: { beginAtZero: false },
+          },
+        },
+      });
+    });
+  
     $: bars = [
       { label: 'Environment', score: environmentScore },
       { label: 'Social', score: socialScore },
       { label: 'Governance', score: governanceScore },
-      { label: 'Total ESG', score: totalEsg }
-    ]
-    </script>
-    
-    <div class="container">
-      <label for="stock-select" class="label">Select Ticker:</label>
-      <select id="stock-select" bind:value={selectedSymbol} on:change={handleSymbolChange}>
-        {#each symbols as symbol}
-          <option value={symbol}>{symbol}</option>
-        {/each}
-      </select>
-      <div class="row">
-        <div class="box" style="width: 60%;">
-          <div class="header">ESG Score</div>
-          <div class="bars">
-            {#each bars as bar}
-              <div class="bar-container">
-                <div
-                  class="bar"
-                  style="
-                    width: {getBarWidth(bar.score)}%;
-                    background-color: {getBarColor(bar.score)};
-                  "
-                >
-                  {bar.label}: {bar.score}
-                </div>
+      { label: 'Total ESG', score: totalEsg },
+    ];
+  </script>
+  
+  <div class="container">
+    <label for="stock-select" class="label">Select Ticker:</label>
+    <select id="stock-select" bind:value={selectedSymbol} on:change={handleSymbolChange}>
+      {#each symbols as symbol}
+        <option value={symbol}>{symbol}</option>
+      {/each}
+    </select>
+    <div class="row">
+      <div class="box" style="width: 60%;">
+        <div class="header">ESG Score</div>
+        <div class="bars">
+          {#each bars as bar}
+            <div class="bar-container">
+              <div
+                class="bar"
+                style="
+                  width: {getBarWidth(bar.score)}%;
+                  background-color: {getBarColor(bar.score)};
+                "
+              >
+                {bar.label}: {bar.score}
               </div>
-            {/each}
-          </div>
-        </div>
-        <div class="box" style="width: 40%;">
-          Rectangle 2
+            </div>
+          {/each}
         </div>
       </div>
-      <div class="row">
-        <div class="box chart-box" style="width: 70%;">
-          <canvas bind:this={chartCanvas}></canvas>
-        </div>
-        <div class="box" style="width: 30%;">
-          Rectangle 4
-        </div>
+      <div class="box" style="width: 40%;">
+        <div class="header">Pipeline Output</div>
+        <p>{pipelineText}</p>
       </div>
     </div>
-    
-    <style>
+    <div class="row">
+      <div class="box chart-box" style="width: 70%;">
+        <canvas bind:this={chartCanvas}></canvas>
+      </div>
+      <div class="box" style="width: 30%;">
+        Rectangle 4
+      </div>
+    </div>
+  </div>
+  
+  <style>
     .container {
       max-width: 1200px;
       margin: 3rem auto;
       padding: 0 2rem;
-      font-family: "Segoe UI", Roboto, sans-serif;
+      font-family: 'Segoe UI', Roboto, sans-serif;
     }
     .label {
       display: inline-block;
@@ -227,5 +252,5 @@
       width: 100%;
       height: 100%;
     }
-    </style>
-    
+  </style>
+  
