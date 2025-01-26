@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import Chart from 'chart.js/auto';
-  
+    
     let symbols: string[] = [];
     let selectedSymbol = '';
     let environmentScore = 0;
@@ -12,19 +12,19 @@
     let bars: { label: string; score: number }[] = [];
     let pipelineText = '';
     let chartCanvas: HTMLCanvasElement;
-  
+    
     function getBarColor(score: number) {
       if (score <= 10) return '#22c55e';
       if (score <= 20) return '#eab308';
       return '#ef4444';
     }
-  
+    
     function getBarWidth(score: number) {
       const max = 30;
       const pct = (score / max) * 100;
       return Math.min(pct, 100);
     }
-  
+    
     function updateScores() {
       if (esgMap[selectedSymbol]) {
         environmentScore = esgMap[selectedSymbol].environmentScore;
@@ -38,7 +38,7 @@
         totalEsg = 0;
       }
     }
-  
+    
     async function fetchPipelineText(ticker: string) {
       try {
         pipelineText = 'Loading...'; 
@@ -57,9 +57,88 @@
       }
     }
   
+    // Fetch prediction data from the new /api/predict endpoint
+    async function fetchPredictionData(ticker: string) {
+      try {
+        const res = await fetch(`/api/predict/${ticker}`);
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
+        const data = await res.json();
+        return data;
+      } catch (err) {
+        console.error("Failed to fetch prediction data:", err);
+      }
+    }
+  
+    async function createChart(ticker: string) {
+  try {
+    console.log(`Fetching prediction data for ticker: ${ticker}`);
+    const predictionData = await fetchPredictionData(ticker);
+    if (!predictionData) return;
+
+    const historicalDates = predictionData.historical.dates;
+    const historicalPrices = predictionData.historical.prices;
+
+    // Get the last historical date (latest date)
+    const lastHistoricalDate = new Date(historicalDates[historicalDates.length - 1]);
+    console.log(`Last historical date: ${lastHistoricalDate}`);
+
+    // Create future dates starting from the day after the last historical date
+    const futureDates = predictionData.predicted.dates.map((dateStr: string, index: number) => {
+      const futureDate = new Date(lastHistoricalDate);
+      futureDate.setDate(lastHistoricalDate.getDate() + index + 1); // Shift by index + 1 day after the last historical date
+      console.log(`Adjusted future date for prediction ${index + 1}: ${futureDate}`);
+      return futureDate.toISOString().split('T')[0]; // Format the date as YYYY-MM-DD
+    });
+
+    // Log the combined dates
+    console.log("Combined Historical Dates:", historicalDates);
+    console.log("Adjusted Predicted Dates:", futureDates);
+
+    // Now, create the chart with both historical and predicted data
+    new Chart(chartCanvas, {
+      type: 'line',
+      data: {
+        labels: historicalDates.concat(futureDates), // Combine historical and future dates (predicted dates)
+        datasets: [
+          {
+            label: 'Historical Stock Prices',
+            data: historicalPrices,
+            borderColor: '#3b82f6', // Blue
+            backgroundColor: 'rgba(59,130,246,0.2)',
+            fill: false,
+          },
+          {
+            label: 'Predicted Stock Prices',
+            data: predictionData.predicted.prices,
+            borderColor: '#f97316', // Orange
+            backgroundColor: 'rgba(249, 115, 22, 0.2)',
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            type: 'category', // Treat the x-axis as categorical for proper date handling
+            labels: historicalDates.concat(futureDates), // Set the combined dates for the x-axis labels
+          },
+          y: { beginAtZero: false }, // Adjust the y-axis to start at the appropriate value
+        },
+      },
+    });
+
+    console.log("Chart creation complete.");
+  } catch (error) {
+    console.error("Error during chart creation:", error);
+  }
+}
+
     async function handleSymbolChange() {
       updateScores();
       await fetchPipelineText(selectedSymbol);
+      await createChart(selectedSymbol);
     }
   
     onMount(async () => {
@@ -81,6 +160,7 @@
         selectedSymbol = symbols[0];
         updateScores();
         await fetchPipelineText(selectedSymbol);
+        await createChart(selectedSymbol);
       }
       bars = [
         { label: 'Environment', score: environmentScore },
@@ -88,27 +168,6 @@
         { label: 'Governance', score: governanceScore },
         { label: 'Total ESG', score: totalEsg },
       ];
-      new Chart(chartCanvas, {
-        type: 'line',
-        data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
-          datasets: [
-            {
-              label: 'Predicted Stock Price',
-              data: [150, 160, 158, 165, 170],
-              borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59,130,246,0.2)',
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: { beginAtZero: false },
-          },
-        },
-      });
     });
   
     $: bars = [
@@ -195,7 +254,7 @@
       border: 1px solid #ddd;
       border-radius: 8px;
       background: #fefefe;
-      height: 260px;
+      height: 300px;
       box-sizing: border-box;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
       display: flex;
