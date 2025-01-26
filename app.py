@@ -18,7 +18,7 @@ def pipeline_endpoint(ticker):
         output = run_pipeline(ticker)
         if output is None:
             return jsonify({"error": "Pipeline failed to return output"}), 500
-        return jsonify({"output": output}), 200
+        return jsonify(output), 200
     except Exception as e:
         print(f"Error in pipeline endpoint: {str(e)}")
         return jsonify({"error": f"Internal Server Error: {str(e)}"}), 500
@@ -79,14 +79,16 @@ def run_pipeline(ticker: str):
         # Convert output string to JSON
         output_data = json.loads(output)
         
-        # Return the value of the 'text' key
+        # Extract 'text' and 'data'
         text_output = output_data.get("text")
-        if text_output is None:
-            print("No 'text' found in the output.")
+        data_output = output_data.get("data")
+
+        if text_output is None or data_output is None:
+            print("Incomplete output. Missing 'text' or 'data'.")
             return None
 
-        print(f"Pipeline completed. Text output: {text_output}")
-        return text_output
+        print(f"Pipeline completed. Text output: {text_output}, Data output: {data_output}")
+        return {"text": text_output, "data": data_output}
     except Exception as e:
         print(f"Error in run_pipeline: {str(e)}")
         return None

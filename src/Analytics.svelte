@@ -11,6 +11,8 @@
     let esgMap: Record<string, { environmentScore: number; socialScore: number; governanceScore: number; totalEsg: number }> = {};
     let bars: { label: string; score: number }[] = [];
     let pipelineText = '';
+    let gicsSector = '';
+    let gicsSubIndustry = '';
     let chartCanvas: HTMLCanvasElement;
     
     function getBarColor(score: number) {
@@ -39,23 +41,43 @@
       }
     }
     
-    async function fetchPipelineText(ticker: string) {
-      try {
-        pipelineText = 'Loading...'; 
-        const res = await fetch(`/api/pipeline/${ticker}`);
-        if (!res.ok) throw new Error(`Error: ${res.status}`);
-        const data = await res.json();
-        const output = data.output;
-        if (output) {
-          pipelineText = output;
-        } else {
-          pipelineText = 'No output available.';
-        }
-      } catch (err) {
-        pipelineText = 'Failed to fetch pipeline data.';
-        console.error(err);
-      }
+    async function fetchPipelineText(ticker) {
+  try {
+    let pipelineText = 'Loading...';
+    let gicsSector = 'Loading...';
+    const res = await fetch(`/api/pipeline/${ticker}`);
+    if (!res.ok) throw new Error(`Error: ${res.status}`);
+    const data = await res.json();
+
+    // Extract text and GICS Sector
+    const outputText = data.text;
+    const outputData = data.data;
+
+    if (outputText) {
+      pipelineText = outputText;
+    } else {
+      pipelineText = 'No output available.';
     }
+
+    if (outputData) {
+      gicsSector = outputData['GICS Sector'];
+      gicsSubIndustry = outputData['GICS Sub-Industry'];
+    }
+
+    console.log('Pipeline Text:', pipelineText);
+    console.log('GICS Sector:', gicsSector);
+
+    // Update the DOM with the new values
+    document.getElementById('pipelineText').textContent = pipelineText;
+    document.getElementById('gicsSector').textContent = gicsSector;
+    document.getElementById('gicsSubIndustry').textContent = gicsSubIndustry;
+
+  } catch (err) {
+    pipelineText = 'Failed to fetch pipeline data.';
+    console.error(err);
+  }
+}
+
   
     async function fetchPredictionData(ticker: string) {
       
@@ -282,8 +304,8 @@ function renderErrorChart(ticker) {
         </div>
       </div>
       <div class="box" style="width: 40%;">
-        <div class="header">Pipeline Output</div>
-        <p>{pipelineText}</p>
+        <div class="header">Company Summary</div>
+        <p id="pipelineText">{pipelineText}</p>
       </div>
     </div>
     <div class="row">
@@ -291,7 +313,10 @@ function renderErrorChart(ticker) {
         <canvas bind:this={chartCanvas}></canvas>
       </div>
       <div class="box" style="width: 30%;">
-        Rectangle 4
+        <div class="header">Industry</div>
+        <p id="gicsSector">{gicsSector}</p>
+        <div class="header">Sub-Industry</div>
+        <p id="gicsSubIndustry">{gicsSubIndustry}</p>
       </div>
     </div>
   </div>
