@@ -1,10 +1,11 @@
 <script lang="ts">
   import Hero from "./lib/components/Hero.svelte";
+  import GeminiApi from "./lib/components/Insights.svelte";
 </script>
 
 <main>
   <Hero tagline="Empowering sustainable investments" />
-  <!-- Add more content here -->
+  <GeminiApi />
 </main>
 
 <style>
