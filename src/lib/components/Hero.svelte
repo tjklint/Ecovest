@@ -1,5 +1,5 @@
 <script lang="ts">
-    export let tagline = "Invest in a sustainable future";
+    export let tagline = "Invest sustainably and responsibly.";
   </script>
   
   <section class="hero">
