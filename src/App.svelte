@@ -10,10 +10,6 @@
     message = data.message;
   }
 
-  onMount(() => {
-    getMessage();
-  });
-
 </script>
 
 <main>
