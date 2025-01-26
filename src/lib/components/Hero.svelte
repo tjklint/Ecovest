@@ -16,9 +16,6 @@
         </button>
       </div>
     </div>
-    <div class="hero-sidebar">
-      <p>Add complementary content here, like an image, stats, or additional info.</p>
-    </div>
   </div>
 </section>
 

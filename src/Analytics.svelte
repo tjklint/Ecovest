@@ -1,6 +1,12 @@
 <script lang="ts">
+    import Navbar from './lib/components/Navbar.svelte'; 
     import { onMount } from 'svelte';
     import Chart from 'chart.js/auto';
+  
+    const navItems = [
+    { name: 'Home', link: '/', icon: 'home' },
+    { name: 'Chart', link: '/analytics', icon: 'chart' },
+    ];
     
     let symbols: string[] = [];
     let selectedSymbol = '';
@@ -22,6 +28,11 @@
     }
     
     function getBarWidth(score: number) {
+  
+  const navItems = [
+    { name: 'Home', link: '/', icon: 'home' },
+    { name: 'Chart', link: '/analytics', icon: 'chart' },
+  ];
       const max = 30;
       const pct = (score / max) * 100;
       return Math.min(pct, 100);
@@ -270,15 +281,20 @@ function renderErrorChart(ticker) {
       ];
     });
   
+    console.log(Navbar);
     $: bars = [
       { label: 'Environment', score: environmentScore },
       { label: 'Social', score: socialScore },
       { label: 'Governance', score: governanceScore },
       { label: 'Total ESG', score: totalEsg },
     ];
+
   </script>
   
+<main>
   <div class="container">
+    <Navbar {navItems} />
+
     <label for="stock-select" class="label">Select Ticker:</label>
     <select id="stock-select" bind:value={selectedSymbol} on:change={handleSymbolChange}>
       {#each symbols as symbol}
@@ -328,6 +344,7 @@ function renderErrorChart(ticker) {
     
     
   </div>
+</main>
   
   <style>
     .container {
