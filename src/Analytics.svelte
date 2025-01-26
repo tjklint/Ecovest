@@ -1,5 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte'
+    import Chart from 'chart.js/auto'
+    
     let symbols: string[] = []
     let selectedSymbol = ''
     let environmentScore = 0
@@ -7,19 +9,20 @@
     let governanceScore = 0
     let totalEsg = 0
     let esgMap: Record<string, { environmentScore: number; socialScore: number; governanceScore: number; totalEsg: number }> = {}
+    let bars: { label: string; score: number }[] = []
+    
+    let chartCanvas: HTMLCanvasElement
     
     function getBarColor(score: number) {
       if (score <= 10) return '#22c55e'
       if (score <= 20) return '#eab308'
       return '#ef4444'
     }
-    
     function getBarWidth(score: number) {
       const max = 30
       const pct = (score / max) * 100
       return Math.min(pct, 100)
     }
-    
     function updateScores() {
       if (esgMap[selectedSymbol]) {
         environmentScore = esgMap[selectedSymbol].environmentScore
@@ -33,11 +36,9 @@
         totalEsg = 0
       }
     }
-    
     function handleSymbolChange() {
       updateScores()
     }
-    
     onMount(async () => {
       const res = await fetch('/data/sp500_esg_data.csv')
       const csv = await res.text()
@@ -57,6 +58,33 @@
         selectedSymbol = symbols[0]
         updateScores()
       }
+      bars = [
+        { label: 'Environment', score: environmentScore },
+        { label: 'Social', score: socialScore },
+        { label: 'Governance', score: governanceScore },
+        { label: 'Total ESG', score: totalEsg }
+      ]
+      new Chart(chartCanvas, {
+        type: 'line',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+          datasets: [
+            {
+              label: 'Predicted Stock Price',
+              data: [150, 160, 158, 165, 170],
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59,130,246,0.2)'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: false }
+          }
+        }
+      })
     })
     
     $: bars = [
@@ -98,8 +126,8 @@
         </div>
       </div>
       <div class="row">
-        <div class="box" style="width: 70%;">
-          Rectangle 3
+        <div class="box chart-box" style="width: 70%;">
+          <canvas bind:this={chartCanvas}></canvas>
         </div>
         <div class="box" style="width: 30%;">
           Rectangle 4
@@ -142,7 +170,7 @@
       border: 1px solid #ddd;
       border-radius: 8px;
       background: #fefefe;
-      height: 300px;
+      height: 260px;
       box-sizing: border-box;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
       display: flex;
@@ -188,6 +216,16 @@
       padding-left: 0.5rem;
       border-radius: 8px 0 0 8px;
       transition: width 0.3s ease;
+    }
+    .chart-box {
+      height: 400px;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 1rem;
+    }
+    .chart-box canvas {
+      width: 100%;
+      height: 100%;
     }
     </style>
     
