@@ -1,13 +1,32 @@
 <script lang="ts">
-    let stocks = ["AAPL", "BBB", "GME"];
-    let selectedStock: string = stocks[0];
+    import { onMount } from 'svelte';
+  
+    let symbols: string[] = [];
+    let selectedStock: string = '';
+  
+    function handleSymbolChange() {
+
+      console.log("Selected stock:", selectedStock);
+    }
+  
+    onMount(async () => {
+      const response = await fetch('/data/sp500_esg_data.csv');
+      const csvText = await response.text();
+      const lines = csvText.trim().split('\n');
+
+      const dataLines = lines.slice(1);
+      symbols = dataLines.map(line => line.split(',')[0]).filter(Boolean);
+      if (symbols.length > 0) {
+        selectedStock = symbols[0];
+      }
+    });
   </script>
   
   <div class="container">
-    <label for="stock-select" class="label">Choose a stock:</label>
-    <select id="stock-select" bind:value={selectedStock}>
-      {#each stocks as stock}
-        <option value={stock}>{stock}</option>
+    <label for="stock-select" class="label">Select Ticker:</label>
+    <select id="stock-select" bind:value={selectedStock} on:change={handleSymbolChange}>
+      {#each symbols as symbol}
+        <option value={symbol}>{symbol}</option>
       {/each}
     </select>
   
