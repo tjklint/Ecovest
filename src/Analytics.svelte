@@ -283,8 +283,22 @@ function renderErrorChart(ticker) {
       {#each symbols as symbol}
         <option value={symbol}>{symbol}</option>
       {/each}
-    </select>
-    <div class="row">
+    </select><div class="row" style="display: flex; align-items: stretch;">
+      <div class="box chart-box" style="width: 70%;">
+        <canvas bind:this={chartCanvas}></canvas>
+      </div>
+      <div class="box" style="width: 30%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div class="header">Industry</div>
+          <p id="gicsSector">{gicsSector || 'Fetching...'}</p>
+        </div>
+        <div>
+          <div class="header">Sub-Industry</div>
+          <p id="gicsSubIndustry">{gicsSubIndustry || 'Fetching...'}</p>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="display: flex; align-items: stretch;">
       <div class="box" style="width: 60%;">
         <div class="header">ESG Score</div>
         <div class="bars">
@@ -303,22 +317,15 @@ function renderErrorChart(ticker) {
           {/each}
         </div>
       </div>
-      <div class="box" style="width: 40%;">
-        <div class="header">Company Summary</div>
-        <p id="pipelineText">{pipelineText}</p>
+      <div class="box" style="width: 40%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div class="header">Company Summary</div>
+          <p id="pipelineText">{pipelineText || 'Fetching..'}</p>
+        </div>
       </div>
     </div>
-    <div class="row">
-      <div class="box chart-box" style="width: 70%;">
-        <canvas bind:this={chartCanvas}></canvas>
-      </div>
-      <div class="box" style="width: 30%;">
-        <div class="header">Industry</div>
-        <p id="gicsSector">{gicsSector}</p>
-        <div class="header">Sub-Industry</div>
-        <p id="gicsSubIndustry">{gicsSubIndustry}</p>
-      </div>
-    </div>
+    
+    
   </div>
   
   <style>
