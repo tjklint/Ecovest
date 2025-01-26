@@ -9,9 +9,9 @@
     let esgMap: Record<string, { environmentScore: number; socialScore: number; governanceScore: number; totalEsg: number }> = {}
     
     function getBarColor(score: number) {
-      if (score <= 10) return '#1ebd5c'
-      if (score <= 20) return '#f1c40f'
-      return '#e74c3c'
+      if (score <= 10) return '#22c55e'
+      if (score <= 20) return '#eab308'
+      return '#ef4444'
     }
     
     function getBarWidth(score: number) {
@@ -76,6 +76,7 @@
       </select>
       <div class="row">
         <div class="box" style="width: 60%;">
+          <div class="header">ESG Score</div>
           <div class="bars">
             {#each bars as bar}
               <div class="bar-container">
@@ -141,12 +142,13 @@
       border: 1px solid #ddd;
       border-radius: 8px;
       background: #fefefe;
-      height: 200px;
+      height: 300px;
       box-sizing: border-box;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
       display: flex;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
       padding: 2rem;
       font-weight: 600;
       font-size: 1rem;
@@ -154,18 +156,27 @@
     .box:not(:last-child) {
       margin-right: 1rem;
     }
+    .header {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      width: 100%;
+      text-align: left;
+      color: #444;
+    }
     .bars {
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
     }
     .bar-container {
       background-color: #f4f4f4;
       border-radius: 8px;
       overflow: hidden;
       width: 100%;
-      height: 30px;
+      height: 35px;
     }
     .bar {
       color: #fff;
