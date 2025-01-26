@@ -6,18 +6,3 @@
   background-color: #f4f4f9;
 }
 
-.hero {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding-left: 2rem;
-  padding-right: 2rem;
-  background-color: #f4f4f9;
-}
-
-.hero-title {
-  font-size: 4rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}

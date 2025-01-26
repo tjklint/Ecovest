@@ -16,17 +16,22 @@
       justify-content: flex-start;
       background-color: #f0f0f0;
       height: 100vh;
+      padding-left: 2rem;
+      padding-right: 2rem;
+      background-color: #f4f4f9;
     }
     .hero-content {
       margin-left: 2rem;
     }
     .hero-title {
-      font-size: 4rem;
+      font-size: 7rem;
       font-weight: bold;
-      margin-bottom: 0.5rem;
+      margin: 0 0;
+      margin-bottom: -0.5rem;
     }
     .hero-tagline {
-      font-size: 1.5rem;
+      margin-top: 0;
+      font-size: 2rem;
       color: #666;
     }
   </style>
